@@ -1,0 +1,39 @@
+#####1) faire des m-array à 3 dimensions : ajouter un effet sexe
+
+Bon, je suppose qu'il faut ajouter quelquepart un truc du genre : 
+
+for (w in 1:nsex) {
+y = levels (X.COV.sexe)
+}
+
+avec nsex = length(levels(X.COV.sexe))
+
+mais chaque fois que je tente un truc, ça plante :(
+
+(L'idée sera ensuite de mettre un effet sexe sur p, et peut être bien sur phi aussi en aléatoire, mais ça je m'en charge, don't worry!)
+
+
+#####2) (si tu as le temps) : fixer certaines p à zéro
+
+Sur certains site, il n'y a pas de captures tous les ans... Donc je voudrai fixer des p à 0.
+De même, je pense que je peut fixer des phi à zéro pour certaines sites, tant que les captures n'ont pas commencé dessus.. (ou au bout de 10 ans sans captures...)
+
+Bon, pour l'instant on a ça : 
+	for (k in 1:nsp){
+		for (t in 1:(n.occasions-1)){
+			logit(phi[k,t]) <-  mu.phi +
+	                         ( epsilon[t] 
+	                         *alpha[k] )
+			for (s in 1:nsites[k]){
+				p[k,vecsp[s,k],t] <- mu.p + beta[k]  + eta[vecsp[s,k]] 
+			}
+	}
+	
+Par exemple, si sur le site 1 on n'a pas de baguage avant l'année 7, je suppose que je pourrais modifier genre :
+
+for (s in 1:nsites[k]){
+		if (s = 1 & t<=7 ) p<-0
+	        else  p[k,vecsp[s,k],t] <- mu.p + beta[k]  + eta[vecsp[s,k]]
+	        
+Qu'en penses tu?
+Ne te moque pas si c'est faux! Je commence enfin à rédiger mes propres boucles sur R, c'est laborieux mais j'ai enfin eu le courage de m'y emttre...
