@@ -63,9 +63,10 @@ Marray=abind(N, along = 3)
 dim(Marray) # 25 25  318 // 318 sites avec pour chacun un marray de dim 25x25
 
 
-save.image(file = "MarrayCreated.RData")
+save.image(file = "MarrayCreated.RData")#pour pas avoir à refaire tourner la boucle ci-dessus
 
-
+#############################################################################################
+load(file = "MarrayCreated.RData")
 
 
 
