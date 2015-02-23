@@ -6,6 +6,7 @@ rm=list(ls())
 
 #setwd('C:/Users/Manon Ghislain L/Documents/Scripts/JAGS')
 setwd('C:/Users/Thimothee Admin/Documents/GitHub/penguinteam/')
+setwd('C:/Users/Timothée/Documents/GitHub/penguinteam/')
 
 #---- charge les packages dont on aura besoin
 library(R2jags) # pour appeler jags depuis R

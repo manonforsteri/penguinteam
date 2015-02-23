@@ -1,5 +1,6 @@
 #R temporary files
 *.Rhistory
+*.RData
 
 # Windows image file caches
 Thumbs.db
