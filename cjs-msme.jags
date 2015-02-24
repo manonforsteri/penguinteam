@@ -8,7 +8,7 @@ for (k in 1:nsp){
                          ( epsilon[t] 
                          *alpha[k] )
 		for (s in 1:nsites[k]){
-			p[k,vecsp[s,k],t] <- mu.p + beta[k] 
+			p[k,vecsp[s,k],t] <- mu.p + beta[k] +slopeLsex[vecsp[s,k]]*beta_p_Sex
                           + eta[vecsp[s,k]] # le nb de sites differe par espece - LE CAUCHEMAR
 		}
 	}
@@ -28,6 +28,8 @@ for (k in 1:nsp){
 for (t in 1:(n.occasions-1)){
 	epsilon[t] ~ dunif(0, 1) # effet aleatoire temps sur survie
 }
+
+beta_p_Sex ~ dunif(-10,10)#Sex difference in detection probability
 
 #-- priors
 #sigma.alpha ~ dunif(0, 5)                

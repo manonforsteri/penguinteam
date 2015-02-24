@@ -2,11 +2,10 @@
 #--- modele de cormack-jolly-seber multi-site multi-espece
 #--- note : on ignore le sexe
 #----------------------------------------------------------
-rm=list(ls())
-
+#rm=list(ls())
 #setwd('C:/Users/Manon Ghislain L/Documents/Scripts/JAGS')
 setwd('C:/Users/Thimothee Admin/Documents/GitHub/penguinteam/')
-setwd('C:/Users/Timothée/Documents/GitHub/penguinteam/')
+#setwd('C:/Users/Timothée/Documents/GitHub/penguinteam/')
 
 #---- charge les packages dont on aura besoin
 library(R2jags) # pour appeler jags depuis R
@@ -16,7 +15,7 @@ library(abind) # pour combiner des arrays (generalise r/cbind)
 #---- lit les donnees et les explore
 dat <- read.table('datadefinitives.txt',header=T)
 head(dat)
-tail(dat)
+#tail(dat)
 names(dat)
 dim(dat)
 attach(dat)
@@ -26,38 +25,54 @@ levels(X.COV.sexe) # modalites var sexe
 levels(X.COV.espece) # modalites var espece
 nsites = length(levels(X.COV.site)) # nb sites 
 nsp = length(levels(X.COV.espece)) # nb especes
-
+sexes<-levels(X.COV.sexe) # modalites var sexe
 
 #---- met les donnees dans un format utilisable pour l analyse bayesienne
 # pre-allocation memoire 
-lgr = rep(NA,nsp) # nb site par espece
+lgr = rep(NA,nsp) # nb site par espece*sexe
+lsex = vector()
+lsite = vector()
 N = NULL # liste des marray par espece x site
 
-for (j in 1:nsp){ # boucle sur les especes
-	k = levels(X.COV.espece)[j] # recupere nom espece courante
-	M = list() # pre-alloue memoire pour les marray de espece courante
-	ind = 1
-	for (s in 1:nsites){ # boucle sur les sites
-		i = levels(X.COV.site)[s] # recupere nom site courant
-		temp <- subset(dat, X.COV.site == i & X.COV.espece == k) # selectionne le jeu de donnees pour site i espece k
-		if(nrow(temp)==0){
-			print(i) # si ce site ne contient pas d obs pour espece k, affiche l id de ce site
-			next() # et passe au site suivant
-			} 
-	# les histoires sont groupees, degroupe pour revenir au format une ligne est un individu
-	temp.converted <- capHistConvert(temp,freq="S.",in.type="frequency",out.type="individual")
-	# convertit les histoires de capture en un m-array
-	m.array.temp <- capHistSum(temp.converted,cols2use=-c(26:28))$m.array
-	m.array.temp[is.na(m.array.temp)] = 0 # on remplace les NA par des 0
-	m.array.temp <- m.array.temp[,-1] # on enleve la col nb de relaches
-	rowSums(m.array.temp) # pour info, calcule le nb de relaches par annee
-	M[[ind]]= m.array.temp # stocke le marray pour le site courant dans la liste M
-	ind <- ind+1
-}
-lgr[j] <- length(M) # stocke le nb de sites de l espece courante
-N <- c(N,M) # concatene les sites de l espece courante avec ceux des especes precedentes
-}
-length(N) # affiche nb de sites total
+uni<-1#unique marray index
+for (j in 1:nsp)# boucle sur les especes
+  { 
+  	k = levels(X.COV.espece)[j] # recupere nom espece courante
+  	M = list() # pre-alloue memoire pour les marray de espece courante
+  	ind = 1
+    tempsp<-subset(dat, X.COV.espece == k )
+    for (sex in 1:length(sexes))
+      {
+        focsex <- sexes[sex]# recupere nom sex courant
+        tempsex<-subset(tempsp,X.COV.sexe == focsex)
+        for (s in 1:nsites)# boucle sur les sites
+          { 
+        		i = levels(X.COV.site)[s] # recupere nom site courant
+        		temp <- subset(tempsex, X.COV.site == i) # selectionne le jeu de donnees pour site i espece k
+        		if(nrow(temp)==0)
+              {
+          			print(paste(k, focsex, i)) # si ce site ne contient pas d obs pour espece k, affiche l id de ce site
+          			next() # et passe au site suivant
+        			} 
+          	# les histoires sont groupees, degroupe pour revenir au format une ligne est un individu
+          	temp.converted <- capHistConvert(temp,freq="S.",in.type="frequency",out.type="individual")
+          	# convertit les histoires de capture en un m-array
+          	m.array.temp <- capHistSum(temp.converted,cols2use=-c(26:28))$m.array
+          	m.array.temp[is.na(m.array.temp)] = 0 # on remplace les NA par des 0
+          	m.array.temp <- m.array.temp[,-1] # on enleve la col nb de relaches
+          	#rowSums(m.array.temp) # pour info, calcule le nb de relaches par annee
+          	M[[ind]]= m.array.temp # stocke le marray pour le site courant dans la liste M
+            lsex[uni]<-focsex
+            lsite[uni]<-i
+          	ind <- ind+1
+            uni <- uni+1
+          }# end for (s in 1:nsites)
+      }#end for (sex in 1:length(sexes))
+  	lgr[j] <- length(M) # stocke le nb de sites*sexes de l espece courante
+  	N <- c(N,M) # concatene les sites de l espece courante avec ceux des especes precedentes
+  }# end for (j in 1:nsp)
+
+length(N) # affiche nb de sites*espece*sex total
 
 # transforme la liste en array qui sera lu par JAGS
 Marray=abind(N, along = 3)
@@ -70,7 +85,6 @@ save.image(file = "MarrayCreated.RData")#pour pas avoir à refaire tourner la bou
 load(file = "MarrayCreated.RData")
 
 
-
 # cree un vecteur avec les intervalles qui definissent les sites pour une espece donnee
 vecsp = matrix(NA,nrow=max(lgr),ncol=nsp)
 somcum = cumsum(lgr)
@@ -80,6 +94,8 @@ for (i in 2:nsp){
 	temp <- (somcum[i-1]+1):somcum[i]
 	vecsp[1:length(temp),i] <- temp
 }
+lsex
+slopeLsex<-(as.numeric(as.factor(lsex))-2)/2 # -0.5 pour femelles, 0.5 pour males, et 0 pour indetermines (suppose un melange proche de 50%)
 
 # on charge le package qui permet d appeler jags depuis R
 library(R2jags)
@@ -97,7 +113,7 @@ for (k in 1:nsp){
                          ( epsilon[t] 
                          *alpha[k] )
 		for (s in 1:nsites[k]){
-			p[k,vecsp[s,k],t] <- mu.p + beta[k] 
+			p[k,vecsp[s,k],t] <- mu.p + beta[k] +slopeLsex[vecsp[s,k]]*beta_p_Sex
                           + eta[vecsp[s,k]] # le nb de sites differe par espece - LE CAUCHEMAR
 		}
 	}
@@ -117,6 +133,8 @@ for (k in 1:nsp){
 for (t in 1:(n.occasions-1)){
 	epsilon[t] ~ dunif(0, 1) # effet aleatoire temps sur survie
 }
+
+beta_p_Sex ~ dunif(-10,10)#Sex difference in detection probability
 
 #-- priors
 #sigma.alpha ~ dunif(0, 5)                
@@ -174,7 +192,7 @@ sink()
 #vecsp[s,k] ; pour chaque espÃ¨ce k, on a les 2 indices qui donnent ou sont les sites, puis la dedans on peut sÃ©lectionner le site s
 #rel[t,s,k] ; nb individus relÃ¢ches au temps t, sur site s pour espÃ¨ce k
 jags.data <- list(marr = Marray, n.occasions = dim(Marray[,,1])[2]
-                  , rel = apply(Marray,3,rowSums), nsites = lgr, vecsp = vecsp,nsp=nsp)
+                  , rel = apply(Marray,3,rowSums), nsites = lgr, vecsp = vecsp,nsp=nsp, slopeLsex=slopeLsex)
 
 # genere des valeurs initiales
 inits <- function(){list(mean.phi = runif(1, 0, 1)
@@ -188,7 +206,8 @@ parameters <- c("phi","mean.p", "mean.phi"
                 , "sigma2.phi"
                 ,"sigma2.p"
                 #,"sigma2.alpha"
-                ,"sigma2.beta"
+                ,"sigma2.beta",
+                "beta_p_Sex"
                 )
 
 # specifications MCMC
