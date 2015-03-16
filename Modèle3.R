@@ -14,6 +14,7 @@ library(abind) # pour combiner des arrays (generalise r/cbind)
 
 #---- lit les donnees et les explore
 dat <- read.table('datadefinitives.txt',header=T)
+dat<-
 head(dat)
 #tail(dat)
 names(dat)
