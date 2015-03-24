@@ -5,12 +5,13 @@
 #rm=list(ls())
 #setwd('C:/Users/Manon Ghislain L/Documents/Scripts/JAGS')
 setwd('C:/Users/Thimothee Admin/Documents/GitHub/penguinteam/')
-#setwd('C:/Users/Timothée/Documents/GitHub/penguinteam/')
+#setwd('C:/Users/Timoth?e/Documents/GitHub/penguinteam/')
 
 #---- charge les packages dont on aura besoin
 library(R2jags) # pour appeler jags depuis R
 library(FSA) # pour calculer les m-array (statistiques reduites)
 library(abind) # pour combiner des arrays (generalise r/cbind)
+
 
 #---- lit les donnees et les explore
 dat <- read.table('datadefinitives.txt',header=T)
@@ -80,7 +81,7 @@ Marray=abind(N, along = 3)
 dim(Marray) # 25 25  318 // 318 sites avec pour chacun un marray de dim 25x25
 
 
-save.image(file = "MarrayCreated.RData")#pour pas avoir à refaire tourner la boucle ci-dessus
+save.image(file = "MarrayCreated.RData")#pour pas avoir ? refaire tourner la boucle ci-dessus
 
 #############################################################################################
 load(file = "MarrayCreated.RData")
