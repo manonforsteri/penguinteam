@@ -2,7 +2,7 @@
 title: "site in phi"
 author: "Timothée Bonnet"
 date: "24 June 2015"
-output: pdf_document
+output: html_document
 ---
 
 #1. Attention au logit / logit$^{-1}$
@@ -41,7 +41,7 @@ abline(h = 1/(1+exp(-(alpha+mean.gamma))),col="orange")
 En supposant qu'un même individu ne peut être observé que sur un site...
 
 ```{r,eval=FALSE}
-    Model
+    #Model
     for(i in 1:I) #boucle sur les individus
       {
         for(t in f[i]:(Kmax-1)) #boucle sur le temps
@@ -76,13 +76,13 @@ En supposant qu'un même individu ne peut être observé que sur un site...
     for(u in 1:nsite){         
       
       Randomsite[u] ~ dnorm(0, tausite)#random effect site 
-      
-    gamma[u] ~ dnorm(mean.gamma, tau)
-    phi.site[u] <- 1 / (1+exp (-mean.gamma[u]))
+  
+    #gamma[u] ~ dnorm(mean.gamma, tau)
+    #phi.site[u] <- 1 / (1+exp (-mean.gamma[u]))
     }
-    mean.gamma ~ dnorm (0, 0.001)
-    sigma      ~ dunif(0,10)
-    tau<-pow(sigma, -2)
+    #mean.gamma ~ dnorm (0, 0.001)
+    #sigma      ~ dunif(0,10)
+    # tau<-pow(sigma, -2)
     
     tausite<-pow(sigmasite,-2)#random precision site
     sigmasite~dunif(0,10)#random sd site

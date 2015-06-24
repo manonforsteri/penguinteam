@@ -96,7 +96,7 @@ abline(h = 1/(1+exp(-(alpha+mean.gamma))),col=&quot;orange&quot;)
 <div id="ma-proposition-de-modele-pour-introduire-site-dans-la-survie" class="section level1">
 <h1>2. Ma proposition de modèle pour introduire site dans la survie</h1>
 <p>En supposant qu’un même individu ne peut être observé que sur un site…</p>
-<pre class="r"><code>    Model
+<pre class="r"><code>    #Model
     for(i in 1:I) #boucle sur les individus
       {
         for(t in f[i]:(Kmax-1)) #boucle sur le temps
@@ -131,13 +131,13 @@ abline(h = 1/(1+exp(-(alpha+mean.gamma))),col=&quot;orange&quot;)
     for(u in 1:nsite){         
       
       Randomsite[u] ~ dnorm(0, tausite)#random effect site 
-      
-    gamma[u] ~ dnorm(mean.gamma, tau)
-    phi.site[u] &lt;- 1 / (1+exp (-mean.gamma[u]))
+  
+    #gamma[u] ~ dnorm(mean.gamma, tau)
+    #phi.site[u] &lt;- 1 / (1+exp (-mean.gamma[u]))
     }
-    mean.gamma ~ dnorm (0, 0.001)
-    sigma      ~ dunif(0,10)
-    tau&lt;-pow(sigma, -2)
+    #mean.gamma ~ dnorm (0, 0.001)
+    #sigma      ~ dunif(0,10)
+    # tau&lt;-pow(sigma, -2)
     
     tausite&lt;-pow(sigmasite,-2)#random precision site
     sigmasite~dunif(0,10)#random sd site</code></pre>
