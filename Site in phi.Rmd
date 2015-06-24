@@ -2,7 +2,7 @@
 title: "site in phi"
 author: "Timothée Bonnet"
 date: "24 June 2015"
-output: pdf_document
+output: html_document
 ---
 
 #1. Attention au logit / logit$^{-1}$
@@ -38,7 +38,7 @@ abline(h = 1/(1+exp(-(alpha+mean.gamma))),col="orange")
 
 #2. Ma proposition de modèle pour introduire site dans la survie
 
-En supposant qu'un même individu peut être observé sur plusieurs sites, une façon efficace de coder les siter est d'utiliser une matrice, **location**, de dimension I x Kmax, avec chaque cellule qui indique le site de l'individu i à t.
+En supposant qu'un même individu ne peut être observé que sur un site...
 
 ```{r,eval=FALSE}
     Model
@@ -46,7 +46,7 @@ En supposant qu'un même individu peut être observé sur plusieurs sites, une faço
       {
         for(t in f[i]:(Kmax-1)) #boucle sur le temps
           {
-            logit(phi[i,t]) <- alpha[t] + phi.sex[sex[i]] + Randomsite[location[i,t]]
+            logit(phi[i,t]) <- alpha[t] + phi.sex[sex[i]] + Randomsite[i]
             logit(p[i,t])   <- beta[t]  + p.sex[sex[i]] + gamma[site[i]]
            } #t
       }#i

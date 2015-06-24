@@ -95,13 +95,13 @@ abline(h = 1/(1+exp(-(alpha+mean.gamma))),col=&quot;orange&quot;)
 </div>
 <div id="ma-proposition-de-modele-pour-introduire-site-dans-la-survie" class="section level1">
 <h1>2. Ma proposition de modèle pour introduire site dans la survie</h1>
-<p>En supposant qu’un même individu peut être observé sur plusieurs sites, une façon efficace de coder les siter est d’utiliser une matrice, <strong>location</strong>, de dimension I x Kmax, avec chaque cellule qui indique le site de l’individu i à t.</p>
+<p>En supposant qu’un même individu ne peut être observé que sur un site…</p>
 <pre class="r"><code>    Model
     for(i in 1:I) #boucle sur les individus
       {
         for(t in f[i]:(Kmax-1)) #boucle sur le temps
           {
-            logit(phi[i,t]) &lt;- alpha[t] + phi.sex[sex[i]] + Randomsite[location[i,t]]
+            logit(phi[i,t]) &lt;- alpha[t] + phi.sex[sex[i]] + Randomsite[i]
             logit(p[i,t])   &lt;- beta[t]  + p.sex[sex[i]] + gamma[site[i]]
            } #t
       }#i
