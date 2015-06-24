@@ -102,7 +102,7 @@ abline(h = 1/(1+exp(-(alpha+mean.gamma))),col=&quot;orange&quot;)
         for(t in f[i]:(Kmax-1)) #boucle sur le temps
           {
             logit(phi[i,t]) &lt;- alpha[t] + phi.sex[sex[i]] 
-            logit(p[i,t])   &lt;- beta[t]  + p.sex[sex[i]] + Randomsite[i]
+            logit(p[i,t])   &lt;- beta[t]  + p.sex[sex[i]] + Randomsite[site[i]]
            } #t
       }#i
     

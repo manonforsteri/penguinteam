@@ -2,7 +2,7 @@
 title: "site in phi"
 author: "Timothée Bonnet"
 date: "24 June 2015"
-output: html_document
+output: pdf_document
 ---
 
 #1. Attention au logit / logit$^{-1}$
@@ -47,7 +47,7 @@ En supposant qu'un même individu ne peut être observé que sur un site...
         for(t in f[i]:(Kmax-1)) #boucle sur le temps
           {
             logit(phi[i,t]) <- alpha[t] + phi.sex[sex[i]] 
-            logit(p[i,t])   <- beta[t]  + p.sex[sex[i]] + Randomsite[i]
+            logit(p[i,t])   <- beta[t]  + p.sex[sex[i]] + Randomsite[site[i]]
            } #t
       }#i
     
