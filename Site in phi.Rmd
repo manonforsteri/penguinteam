@@ -2,7 +2,7 @@
 title: "site in phi"
 author: "Timothée Bonnet"
 date: "24 June 2015"
-output: html_document
+output: pdf_document
 ---
 
 #1. Attention au logit / logit$^{-1}$
