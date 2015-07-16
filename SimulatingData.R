@@ -1,14 +1,28 @@
 setwd(dir = "C:/Users/Thimothee Admin/Documents/GitHub/penguinteam/")
 
 ###### Simulation model phi(sp+t) p(.) #####
-n.occasions <- 6                   # Number of capture occasions
-effect_Occasions<-rnorm(n = n.occasions-1,mean = 0,sd = 0.5)#time effect
-meanphi<-0.5
+n.occasions <- 15                   # Number of capture occasions
+meanphi<-0#logit intercept survival (i.e 0.5 on survival scale)
+effect_Occasions<-c(0,rnorm(n = n.occasions-2,mean = 0,sd = 0.5))#time effect
+
+n.sp<-5
+effect_Sp<-c(0,rnorm(n = n.sp-1,mean=0,sd=1))
+
+
 marked <- rep(50, n.occasions-1)   # Annual number of newly marked individuals
 p <- rep(0.4, n.occasions-1)#constant recapture probability
 
 # Define matrices with survival and recapture probabilities
-PHI <- matrix(1/(1+exp(-(meanphi+effect_Occasions))), ncol = n.occasions-1, nrow = sum(marked))
+PHI <- matrix(NA, ncol = n.occasions-1, nrow = sum(marked))
+sp_ind<-sample(x = 1:n.sp,size = sum(marked),replace = TRUE)#to which species does this individual belong?
+for (i in 1:sum(marked))
+  {
+    for (t in 1:(n.occasions-1))
+      {
+        PHI[i,t]<-1/(1+exp(-( meanphi + effect_Occasions[t] + effect_Sp[sp_ind[i]] ) ) )# additive effects only
+      }
+  }
+
 P <- matrix(p, ncol = n.occasions-1, nrow = sum(marked))
 
 # Define function to simulate a capture-history (CH) matrix
@@ -72,16 +86,26 @@ cat("
     model {
     # Priors and constraints
     for (i in 1:nind){
-    for (t in f[i]:(n.occasions-1)){
-    logit(phi[i,t]) <- mu.phi
-    logit(p[i,t]) <- mu.p
-    } #t
+      for (t in f[i]:(n.occasions-1)){
+        logit(phi[i,t]) <- mu.phi + beta.t[t] + beta.sp[sp_ind[i]]
+        logit(p[i,t]) <- mu.p
+      } #t
     } #i
     
     meanphi ~ dunif(0, 1)              # Priors for group-specific survival
 
     mu.phi<- log(phi.mean/(1-phi.mean))
     phi.mean ~ dunif(0,1)
+
+    beta.t[1]<-0
+    for (t in 2:(n.occasions-1)){
+      beta.t[t] ~ dnorm(0,0.01)
+    }
+
+    beta.sp[1]<-0
+    for (sp in 2:n.sp){
+      beta.sp[sp] ~ dnorm(0,0.01)
+    }
 
     mu.p <- log(p.mean/(1-p.mean))
     p.mean ~ dunif(0,1)
@@ -104,13 +128,15 @@ cat("
 sink()
 
 # Bundle data
-jags.data <- list(y = CH, f = f, nind = dim(CH)[1], n.occasions = dim(CH)[2], z = known.state.cjs(CH))
+jags.data <- list(y = CH, f = f, nind = dim(CH)[1], n.occasions = dim(CH)[2], z = known.state.cjs(CH), sp_ind=sp_ind, n.sp=length(unique(sp_ind)) )
 
 # Initial values
-inits <- function(){list(z = cjs.init.z(CH, f), phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1))}  
+inits <- function(){list(z = cjs.init.z(CH, f), phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
+                         beta.t=c(NA,rnorm(n = n.occasions-2,mean = 0,sd=1 ) ),
+                         beta.sp=c(NA,rnorm(n = n.sp-1,mean = 0,sd=1 ) ))}  
 
 # Parameters monitored
-parameters <- c("phi.mean", "p.mean")
+parameters <- c("phi.mean", "p.mean","beta.t","beta.sp")
 
 # MCMC settings
 ni <- 1000
