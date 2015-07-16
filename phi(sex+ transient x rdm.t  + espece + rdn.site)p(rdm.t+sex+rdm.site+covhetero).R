@@ -111,12 +111,12 @@ cat("
     
     #Model
     for(i in 1:I){
-    for(t in (f[i]):(Kmax-1)) {
-    logit(phi[i,t])<- rt.phi.trans[x[i,t],t] + phi.sex[sex[i]] + phi.species[species[i]] + random.phi.site[site[i]]
-    lp[i,t]<-  random.p.temps[t] + p.sex[sex[i]] + random.p.site[site[i]] + b1*covhetero[i] + p.species[species[i]]
-    p[i,t]<-   A[i,t]/(1+exp(-lp[i,t]))                         #inverse logit
-    
-    } #t
+      for(t in (f[i]):(Kmax-1)) {
+        logit(phi[i,t])<- rt.phi.trans[x[i,t],t] + phi.sex[sex[i]] + phi.species[species[i]] + random.phi.site[site[i]]
+        lp[i,t]<-  random.p.temps[t] + p.sex[sex[i]] + random.p.site[site[i]] + b1*covhetero[i] + p.species[species[i]]
+        p[i,t]<-   A[i,t]/(1+exp(-lp[i,t]))                         #inverse logit
+      
+      } #t
     }#i
     
     #####Priors#####
@@ -129,13 +129,13 @@ cat("
     phi.sex[3] ~ dnorm(0,0.01)I(-10,10)
     
     for(a in 1:2){
-    for(t in 1:(Kmax-1)){
-    rt.phi.trans[a,t]<-mu.phi.rttrans[a] + epsilon.phi.rttrans[a,t]
-    epsilon.phi.rttrans[a,t] ~ dnorm(0, tau.phi.rttrans[a])
-    }
-    mu.phi.rttrans[a] ~ dnorm(0,0.01)I(-10,10)         
-    sigma.phi.rttrans[a] ~ dunif(0,10) 
-    tau.phi.rttrans[a] <- pow(sigma.phi.rttrans[a], -2)
+      for(t in 1:(Kmax-1)){
+        rt.phi.trans[a,t]<-mu.phi.rttrans[a] + epsilon.phi.rttrans[a,t]
+        epsilon.phi.rttrans[a,t] ~ dnorm(0, tau.phi.rttrans[a])
+      }
+      mu.phi.rttrans[a] ~ dnorm(0,0.01)I(-10,10)         
+      sigma.phi.rttrans[a] ~ dunif(0,10) 
+      tau.phi.rttrans[a] <- pow(sigma.phi.rttrans[a], -2)
     }
 
     phi.species[1]<- 0
@@ -144,7 +144,7 @@ cat("
     }
 
     for(u in 1:nsite){                                             
-    random.phi.site[u] ~ dnorm(0, tau.phi.site)
+     random.phi.site[u] ~ dnorm(0, tau.phi.site)
     }    
     sigma.phi.site   ~ dunif(0,10)
     tau.phi.site    <-  pow(sigma.phi.site, -2) 
@@ -154,23 +154,24 @@ cat("
    
     b1 ~ dnorm(0,0.01)I(-10,10)
     
-    p.sex[1]<-0
-    p.sex[2] ~ dnorm(0,0.01)I(-10,10)
-    p.sex[3] ~ dnorm(0,0.01)I(-10,10)
+    phi.sex[1] <- 0
+    for (s in 2:3){
+        phi.sex[s] ~ dnorm(0,0.01)I(-10,10)
+      }
     
     for(u in 1:nsite){                                          
-    random.p.site[u] ~ dnorm(0, tau.p.site)                      
+      random.p.site[u] ~ dnorm(0, tau.p.site)                      
     }
     sigma.p.site     ~ dunif(0,10)
     tau.p.site       <-  pow(sigma.p.site, -2)    
     
     p.species[1]<- 0
     for(s in 2:nspecies){
-    p.species[s] ~ dnorm(0,0.01)I(-10,10)
+      p.species[s] ~ dnorm(0,0.01)I(-10,10)
     }
     
     for(t in 1:(Kmax-1)){
-    random.p.temps[t] ~ dnorm(0,tau.p.temps)
+      random.p.temps[t] ~ dnorm(0,tau.p.temps)
     }
     sigma.p.temps     ~ dunif(0,10)
     tau.p.temps       <-  pow(sigma.p.temps, -2)
@@ -178,19 +179,19 @@ cat("
     ####Likelihood####
     for(i in 1:I){
     
-    #Latent state at first capture
-    z[i,f[i]]<-1
-    
-    for(t in (f[i]+1):Kmax){
-    
-    #State process
-    z[i,t] ~ dbern(mu1[i,t])
-    mu1[i,t]<-phi[i,t-1]*z[i,t-1]
-    
-    #Obs process
-    y[i,t] ~ dbern(mu2[i,t])
-    mu2[i,t]<-p[i,t-1]*z[i,t]
-    }#t
+      #Latent state at first capture
+      z[i,f[i]]<-1
+      
+      for(t in (f[i]+1):Kmax){
+        
+        #State process
+        z[i,t] ~ dbern(mu1[i,t])
+        mu1[i,t]<-phi[i,t-1]*z[i,t-1]
+        
+        #Obs process
+        y[i,t] ~ dbern(mu2[i,t])
+        mu2[i,t]<-p[i,t-1]*z[i,t]
+      }#t
     }#i   
     
     }
