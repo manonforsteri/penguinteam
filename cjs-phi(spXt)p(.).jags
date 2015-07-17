@@ -2,27 +2,33 @@
     model {
     # Priors and constraints
     for (i in 1:nind){
-      for (t in f[i]:(n.occasions-1)){
-        logit(phi[i,t]) <- mu.phi + beta.t[t] + beta.sp[ sp_ind[i] ]
-        logit(p[i,t]) <- mu.p
-      } #t
+    for (t in f[i]:(n.occasions-1)){
+    logit(phi[i,t]) <- mu.phi + beta.t[t] + beta.sp[ sp_ind[i] ] + beta.tXsp[ t,sp_ind[i] ]
+    logit(p[i,t]) <- mu.p
+    } #t
     } #i
     
     meanphi ~ dunif(0, 1)              # Priors for group-specific survival
-
+    
     mu.phi<- log(phi.mean/(1-phi.mean))
     phi.mean ~ dunif(0,1)
-
+    
     beta.t[1]<-0
+    beta.tXsp[1,1]<-0
     for (t in 2:(n.occasions-1)){
-      beta.t[t] ~ dnorm(0,0.01)
+    beta.t[t] ~ dnorm(0,0.01)
+    beta.tXsp[t,1]<-0
     }
-
+    
     beta.sp[1]<-0
     for (sp in 2:n.sp){
-      beta.sp[sp] ~ dnorm(0,0.01)
+    beta.sp[sp] ~ dnorm(0,0.01)
+    beta.tXsp[1,sp]<-0
+    for (t in 2:(n.occasions-1)){
+    beta.tXsp[t,sp] ~ dnorm(0,0.01)
     }
-
+    }
+    
     mu.p <- log(p.mean/(1-p.mean))
     p.mean ~ dunif(0,1)
     
