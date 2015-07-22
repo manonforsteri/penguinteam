@@ -2,9 +2,8 @@ library(R2jags)
 library(Hmisc)
 Sys.setenv(MAKEFLAGS = "-j8")  
 
+setwd("C:/Users/Pierre-Yves Henry/Desktop/nouveau JAGS")
 spagarder<-read.table("spagarder.txt")
-
-setwd("C:/Users/MGGCBRUNOY/Desktop/nouveau JAGS")
 data12<-read.table("data12.txt", sep = " ",header=T, na="", dec=".")
 DATA<-data12[which(substr(data12$ETAT,1,2)=="AD" 
                    & data12$ANNEE<2015 
