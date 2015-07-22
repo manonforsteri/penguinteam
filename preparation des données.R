@@ -15,6 +15,11 @@ hum<-c("PANBIA","CETCET","EMBSCH","LUSSVE", "ACRSCI", "ACRRIS", "ACRSCH")
 DATA<-DATA[which(DATA$SP %nin% hum
                  | (DATA$SP %in% hum & DATA$ANNEE<2001)     ),]
 
+#ne garder un site que s'il a au moins 2 espèces : 
+tab<-table(DATA$SITE, DATA$SP)
+tab2=(tab!=0)
+siteretenu=rownames(tab2)[rowSums(tab2)>=2]
+DATA<-DATA[(DATA$SITE %in% siteretenu),]
 DATA<-droplevels(DATA)
 
 #matrice 0 et 1
