@@ -1,0 +1,50 @@
+
+    model {
+    # Priors and constraints
+    for (i in 1:nind){
+    for (t in f[i]:(n.occasions-1)){
+    logit(phi[i,t]) <- mu.phi + beta.t[t] + beta.sp[ sp_ind[i] ] + beta.tXsp[ t,sp_ind[i] ]
+    logit(p[i,t]) <- mu.p
+    } #t
+    } #i
+    
+    meanphi ~ dunif(0, 1)              # Priors for group-specific survival
+    
+    mu.phi<- log(phi.mean/(1-phi.mean))
+    phi.mean ~ dunif(0,1)
+    
+    for (t in 1:(n.occasions-1)){
+    beta.t[t] ~ dnorm(0,tau.t)
+    }
+    tau.t <- pow(sigma.t, -2)
+    sigma.t ~ dunif(0,10)
+    
+    for (sp in 1:n.sp){
+    beta.sp[sp] ~ dnorm(0,tau.sp)
+    for (t in 1:(n.occasions-1)){
+    beta.tXsp[t,sp] ~ dnorm(0,tau.tXsp)
+    }
+    }
+    tau.sp <- pow(sigma.sp, -2)
+    sigma.sp ~ dunif(0,10)
+    tau.tXsp <- pow(sigma.tXsp, -2)
+    sigma.tXsp ~ dunif(0,10)
+
+    mu.p <- log(p.mean/(1-p.mean))
+    p.mean ~ dunif(0,1)
+    
+    # Likelihood 
+    for (i in 1:nind){
+    # Define latent state at first capture
+    z[i,f[i]] <- 1
+    for (t in (f[i]+1):n.occasions){
+    # State process
+    z[i,t] ~ dbern(mu1[i,t])
+    mu1[i,t] <- phi[i,t-1] * z[i,t-1]
+    # Observation process
+    y[i,t] ~ dbern(mu2[i,t])
+    mu2[i,t] <- p[i,t-1] * z[i,t]
+    } #t
+    } #i
+    }
+    
