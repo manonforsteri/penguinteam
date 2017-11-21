@@ -1,6 +1,0 @@
-success <- FALSE
-while(!success){
-    s <- try(results <- run.jags(...))
-    success <- class(s)!='try-error'
-}
-results
