@@ -1,0 +1,7 @@
+\contentsline {section}{\numberline {1}Goal and rationale}{2}{section.1}
+\contentsline {section}{\numberline {2}Load packages and data}{2}{section.2}
+\contentsline {section}{\numberline {3}Strong synchrony}{3}{section.3}
+\contentsline {subsection}{\numberline {3.1}Data simulation}{3}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Interaction model with explicit synchorny}{4}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Interactive model without explicit synchrony}{8}{subsection.3.3}
+\contentsline {section}{\numberline {4}No synchrony}{11}{section.4}

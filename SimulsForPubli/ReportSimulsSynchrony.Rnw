@@ -18,7 +18,7 @@
     urlcolor=black
 }
 
-\title{MR}
+\title{Supplementary information: Among-species heterogeneity in sample size does not bias the estimation of synchrony}
 \date{\today}
 \author{Timoth\'ee Bonnet}
 
@@ -30,22 +30,41 @@
 
 \clearpage
 
+\section{Goal and rationale}
+The primary goal of this appendix is to test the idea that among-species heterogeneity in sample size might bias the estimation of synchrony among species. The verbal argument behind this concern is that the time-dynamic of the most common species might "spill over" the estimation of the time-dynamic common to all species. 
+A suggested solution to this problem has been not to model synchrony explicitly, so that the model does not contain an across-species time-dynamic, but instead to estimate species-specific time dynamics independently, and reconstruct the synchrony a posteriori. Technically, this would be done by fitting a species-by-time random interaction without fitting the main random effect of time (but fitting the main random effect of species).
+
+However, theory suggest that mixed models are generally able to handle unbalanced data, and that the estimation of synchrony should not be biased by unequal sample sizes.
+Moreover, theory also suggests that the "solution" of not modeling synchrony explicitly and reconstructed it a posteriori from model prediction is flawed, and will generally lead to  under-estimation.
+
+Here, we test that these two expectations hold for the special case of mixed mark-recapture models used in the main text, and that the results presented in the main text do not suffer from a bias due to unequal sample size among species.
+To this end, we first multi-species mark-recapture data with synchrony among species or with no synchrony among species. We use the same sample size per year and per species as in the real data, but halved, in order to speed up modeling.  
+We then analyse the simulated data either with a model that explicitly contain synchrony, or with a model that does not contain explicit synchrony but only allow for its reconstruction from species-specific estimates.
+
+We first show that when sychrony is present in simulated data, a model explicitly modeling synchrony can recover it. We then show that on the same data, a model that does not explicitly model synchrony, but instead makes it estimation possible a posteriori, fails to estimate synchrony.
+Finally, we show that the first model (explicitly modeling synchrony) does not detect synchrony if none is simulated in the data.
 
 \section{Load packages and data}
-
+We need \texttt{R2jags} to communicate with \texttt{JAGS}.
+We use \texttt{reshape} to convert a matrix into a data frame.
+We use \texttt{lme4} for variance partitioning.
+We also load the real sample sizes per species per year.
 <<>>=
 setwd(dir = "~/Documents/GitHub/penguinteam/SimulsForPubli/")
 library(R2jags)
+library(reshape)
+library(lme4)
 
 SpNumbers <- read.table(file = "SpNumbers.txt", header=TRUE)
 SpNumbers <- SpNumbers[,-1]
+
 @
 
 \section{Strong synchrony}
 
 \subsection{Data simulation}
 
-We use an additive model to simulate data, so that the effect of time is the same for all species, leading to strong synchrony. 
+We use an additive model to simulate data, so that the effect of time is the same for all species, leading to strong (virtually perfect) synchrony. 
 
 <<>>=
 n.occasions <- ncol(SpNumbers)  # Number of capture occasions
@@ -76,11 +95,6 @@ for (sp in 1:n.sp)
   }
   
 }
-
-colMeans(PHI)
-plot(colMeans(PHI), effect_Occasions)
-summary(PHI)
-
 
 P <- matrix(p, ncol = n.occasions-1, nrow = sum(SpTots))
 
@@ -154,8 +168,9 @@ cjs.init.z <- function(ch,f){
 
 
 \subsection{Interaction model with explicit synchorny}
+We now fit a model that try to estimate the synchrony on the data containing strong synchrony.
 
-<<>>=
+<<eval=FALSE>>=
 sink("cjs-phi(spXt)p(.).jags")
 cat("
     model {
@@ -213,10 +228,13 @@ sink()
 
 
 
-<<>>=
+<<eval=FALSE>>=
 
 # Bundle data
-jags.data <- list(y = CH, f = f, nind = dim(CH)[1], n.occasions = dim(CH)[2], z = known.state.cjs(CH), sp_ind=sp_ind, n.sp=n.sp)
+jags.data <- list(y = CH, f = f, nind = dim(CH)[1],
+                  n.occasions = dim(CH)[2], 
+                  z = known.state.cjs(CH), 
+                  sp_ind=sp_ind, n.sp=n.sp)
 
 #### Initial values####
 #interaction init
@@ -233,13 +251,17 @@ for (i in 1:(n.occasions-1))
 return(beta.tXsp)
 }
 
-inits <- function(){list(z = cjs.init.z(CH, f), phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
-                         beta.t=c(rnorm(n = n.occasions-1,mean = 0,sd=1 ) ),
-                         beta.sp=c(rnorm(n = n.sp,mean = 0,sd=1 ) ),
-                         beta.tXsp= beta.tXsp_ini() )}  
+inits <- function(){list(z = cjs.init.z(CH, f),
+                phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
+                beta.t=c(rnorm(n = n.occasions-1,mean = 0,sd=1 ) ),
+                beta.sp=c(rnorm(n = n.sp,mean = 0,sd=1 ) ),
+                beta.tXsp= beta.tXsp_ini() )}  
 
 # Parameters monitored
-parameters <- c("phi.mean", "p.mean","beta.t","beta.sp","beta.tXsp", "sigma.sp", "sigma.t", "sigma.tXsp")
+parameters <- c("phi.mean", "p.mean",
+                "beta.t","beta.sp",
+                "beta.tXsp", "sigma.sp",
+                "sigma.t", "sigma.tXsp")
 
 # MCMC settings
 ni <- 11000
@@ -247,58 +269,80 @@ nt <- 10
 nb <- 1000
 nc <- 3
 
-cjs.interactionS <- jags(jags.data, inits, parameters, "cjs-phi(spXt)p(.).jags",
-                        n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, working.directory = getwd())
+cjs.interactionS <- jags(jags.data, inits, parameters,
+                         "cjs-phi(spXt)p(.).jags",
+                        n.chains = nc, n.thin = nt,
+                        n.iter = ni, n.burnin = nb,
+                        working.directory = getwd())
 
 print(cjs.interactionS, digits = 3)
 
 @
 
+<<>>=
+load(file = "ForCluster/cjs.interactionS_dataSynchro")
+@
 
 The synchrony is well recovered graphically:
 <<>>=
 # Summarize posteriors
 
 predictions <- cjs.interactionS$BUGSoutput$mean$beta.tXsp +
-  matrix(cjs.interactionS$BUGSoutput$mean$beta.t, nrow = n.occasions-1, ncol = n.sp, byrow = FALSE) +
-  matrix(cjs.interactionS$BUGSoutput$mean$beta.sp, nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
+  matrix(cjs.interactionS$BUGSoutput$mean$beta.t,
+         nrow = n.occasions-1, ncol = n.sp, byrow = FALSE) +
+  matrix(cjs.interactionS$BUGSoutput$mean$beta.sp,
+         nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
 
-matrix(cjs.interactionS$BUGSoutput$mean$beta.sp, nrow = n.occasions-1, ncol = n.sp, byrow = TRUE)
 
-plot(predictions[,1], type="l", ylim=c(-1.5,1.5), xlab="year", main="With year RE")
+plot(predictions[,1], type="l", ylim=c(-3,3),
+     xlab="year", main="With year RE")
 for(i in 1:n.sp)
 {
   lines(predictions[,i])
 }
 @
 
-Intra-Class correlation:
+The intra-Class correlation is close to one, as revealed by the point estimate:
 <<>>=
 (cjs.interactionS$BUGSoutput$mean$sigma.t^2)/
-  (cjs.interactionS$BUGSoutput$mean$sigma.tXsp^2+cjs.interactionS$BUGSoutput$mean$sigma.t^2)
+  (cjs.interactionS$BUGSoutput$mean$sigma.tXsp^2+
+     cjs.interactionS$BUGSoutput$mean$sigma.t^2)
 
-plot(colMeans(predictions),effect_Sp)
-plot(rowMeans(predictions), effect_Occasions)
 @
 
+As well as the posterior distribution:
 <<>>=
-iccpost <- vector(length=3000)
-for (ch in 1:3)
+iccpost <- vector(length=1000)
+for (ch in 1:1)
 {
   for (itt in 1:1000)
   {
-    iccpost[itt + 1000*(ch-1)] <- cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 /
+    iccpost[itt + 1000*(ch-1)] <- 
+      cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 /
       ( cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 + 
           cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.tXsp"]^2)
   }
 }
-traceplot(as.mcmc(iccpost))
-  
+
+
+sdprior <- runif(n = 10000, min = 0, max = 10)
+sdprior2 <- sdprior
+
+iccprior <- (sdprior^2)/(sdprior^2+sdprior2^2)
+
+traceplot(as.mcmc(iccpost), ylim=c(0,1))
+plot(density(iccpost), xlim = c(0,1), lwd=5,
+     main="Synchrony estimate with strong synchrony simulated (1)",
+     xlab="ICC", ylab="Probability density")
+
+lines(density(iccprior), lwd=3, lty=2, col="gray")
+
 @
 
 \subsection{Interactive model without explicit synchrony}
+We analyse the same data, but this time using a model that does not explicitly contain synchrony.
 
-<<>>=
+<<eval=FALSE>>=
 
 sink("cjs-phi(spXt_no_t)p(.).jags")
 cat("
@@ -349,9 +393,12 @@ sink()
 
 @
 
-<<>>=
+<<eval=FALSE>>=
 # Bundle data
-jags.data <- list(y = CH, f = f, nind = dim(CH)[1], n.occasions = dim(CH)[2], z = known.state.cjs(CH), sp_ind=sp_ind, n.sp=n.sp)
+jags.data <- list(y = CH, f = f, nind = dim(CH)[1], 
+                  n.occasions = dim(CH)[2],
+                  z = known.state.cjs(CH), 
+                  sp_ind=sp_ind, n.sp=n.sp)
 
 #### Initial values####
 #interaction init
@@ -368,12 +415,15 @@ for (i in 1:(n.occasions-1))
 return(beta.tXsp)
 }
 
-inits <- function(){list(z = cjs.init.z(CH, f), phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
-                         beta.sp=c(rnorm(n = n.sp,mean = 0,sd=1 ) ),
-                         beta.tXsp= beta.tXsp_ini() )}  
+inits <- function(){list(z = cjs.init.z(CH, f),
+                  phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
+                  beta.sp=c(rnorm(n = n.sp,mean = 0,sd=1 ) ),
+                  beta.tXsp= beta.tXsp_ini() )}  
 
 # Parameters monitored
-parameters <- c("phi.mean", "p.mean","beta.sp","beta.tXsp", "sigma.sp", "sigma.tXsp")
+parameters <- c("phi.mean", "p.mean",
+                "beta.sp","beta.tXsp",
+                "sigma.sp", "sigma.tXsp")
 
 # MCMC settings
 ni <- 11000
@@ -381,31 +431,53 @@ nt <- 10
 nb <- 1000
 nc <- 3
 
-cjs.interactionNot <- jags(jags.data, inits, parameters, "cjs-phi(spXt_no_t)p(.).jags",
-                        n.chains = nc, n.thin = nt, n.iter = ni, n.burnin = nb, working.directory = getwd())
+cjs.interactionNot <- jags(jags.data, inits,
+                           parameters, "cjs-phi(spXt_no_t)p(.).jags",
+                        n.chains = nc, n.thin = nt,
+                        n.iter = ni, n.burnin = nb,
+                        working.directory = getwd())
 
 print(cjs.interactionNot, digits = 3)
 @
 
+<<>>=
+load(file = "ForCluster/cjs.interactionSNot_dataSynchro")
+@
 
+Graphically, much less synchrony is apparent:
 <<>>=
 
-predictions <-  matrix(cjs.interactionNot$BUGSoutput$mean$phi.mean, nrow = n.occasions-1, ncol=n.sp, byrow = TRUE) +
+predictions <-  matrix(cjs.interactionNot$BUGSoutput$mean$phi.mean,
+                       nrow = n.occasions-1, ncol=n.sp, byrow = TRUE) +
       cjs.interactionNot$BUGSoutput$mean$beta.tXsp +
-  matrix(cjs.interactionNot$BUGSoutput$mean$beta.sp, nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
+  matrix(cjs.interactionNot$BUGSoutput$mean$beta.sp,
+         nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
 
 
-plot(predictions[,1], type="l", ylim=c(-1.5,1.5), xlab="year", main="With year RE")
+plot(predictions[,1], type="l", ylim=c(-3,3), xlab="year", main="With year RE")
 for(i in 1:n.sp)
 {
   lines(predictions[,i])
 }
 @
 
-\section{No synchrony}
-
+The intra class correlation (ratio of temporal variance common to all species over the total temporal variance) is weak and close to zero.
 <<>>=
-effect_OccasionsSP<-matrix(c(rnorm(n = (n.occasions-1)*n.sp,mean = 0,sd = 0.5)), nrow=n.sp, ncol=(n.occasions-1))#time effect
+
+meltedpredictions <- melt(predictions)
+summary(aov(formula = value ~ X2 + X1, data=meltedpredictions))
+summary(lmer(value ~ 1 + (1|X1)+ (1|X2), data=meltedpredictions))
+@
+
+\section{No synchrony}
+We now simulate data without any synchrony.
+<<>>=
+effect_OccasionsSP<-matrix(c(rnorm(n = (n.occasions-1)*n.sp,
+                                   mean = 0,sd = 0.5)),
+                           nrow=n.sp, 
+                           ncol=(n.occasions-1))#time effect
+
+effect_Sp<-c(0,rnorm(n = n.sp-1,mean=0,sd=1))
 
 
 # Define matrices with survival and recapture probabilities
@@ -421,25 +493,73 @@ for (sp in 1:n.sp)
   for (occ in 1:(n.occasions-1))
   {
     oce <- effect_Occasions[occ]
-    PHI[(CumulTots[sp]+1):CumulTots[sp+1],occ] <- 1/(1+exp(-( meanphi + effect_OccasionsSP[sp,occ] + spe) ) )
+    PHI[(CumulTots[sp]+1):CumulTots[sp+1],occ] <- 
+      1/(1+exp(-( meanphi + effect_OccasionsSP[sp,occ] + spe) ) )
   }
 }
 
 @
 
 
-<<>>=
+<<eval=FALSE>>=
 
 
 # Execute function
-CH <- simul.cjs(PHI, P, marked)
+CH <- simul.cjs(PHI, P, SpTots)
 
 # Create vector with occasion of marking
 get.first <- function(x) min(which(x!=0))
 f <- apply(CH, 1, get.first)
 @
 
+We fit the model with explicit synchrony.
+
+<<>>=
+load(file = "ForCluster/cjs.interactionS_dataNoSynchro")
+@
+
+There graphically:
+<<>>=
+# Summarize posteriors
+
+predictions <- cjs.interactionSdataNoS$BUGSoutput$mean$beta.tXsp +
+  matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.t, 
+         nrow = n.occasions-1, ncol = n.sp, byrow = FALSE) +
+  matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.sp, 
+         nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
 
 
+plot(predictions[,1], type="l", ylim=c(-3,3), xlab="year", main="With year RE")
+for(i in 1:n.sp)
+{
+  lines(predictions[,i])
+}
+@
 
+Intra-Class correlation:
+<<>>=
+(cjs.interactionSdataNoS$BUGSoutput$mean$sigma.t^2)/
+  (cjs.interactionSdataNoS$BUGSoutput$mean$sigma.tXsp^2+
+     cjs.interactionSdataNoS$BUGSoutput$mean$sigma.t^2)
+
+@
+
+<<>>=
+iccpost <- vector(length=1000)
+for (ch in 1:1)
+{
+  for (itt in 1:1000)
+  {
+    iccpost[itt + 1000*(ch-1)] <- 
+      cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 /
+      ( cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 + 
+          cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.tXsp"]^2)
+  }
+}
+traceplot(as.mcmc(iccpost), ylim=c(0,1))
+plot(density(iccpost), xlim = c(0,1),
+     main="Synchrony estimate with no synchrony simulated")  
+
+
+@
 \end{document}
