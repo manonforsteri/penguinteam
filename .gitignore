@@ -1,3 +1,18 @@
+*-1.pdf
+*-2.pdf
+*-1.tikz
+*-2.tikz
+
+*.out
+*.aux
+*.log
+*.bbl
+*.jags
+Archive*
+*tikzDictionary
+*.toc
+*.gz
+
 #R temporary files
 *.Rhistory
 *.RData

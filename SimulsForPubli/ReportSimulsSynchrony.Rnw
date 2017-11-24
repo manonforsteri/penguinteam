@@ -18,9 +18,26 @@
     urlcolor=black
 }
 
-\title{Supplementary information: Among-species heterogeneity in sample size does not bias the estimation of synchrony}
+\usepackage{natbib}
+%\setcitestyle{citesep={;},aysep={}}% needed for molecular ecology .bst % But now we use Evolution template
+ % The \cite command functions as follows:
+ %   \citet{key} ==>>                Jones et al. (1990)
+ %   \citet*{key} ==>>               Jones, Baker, and Smith (1990)
+ %   \citep{key} ==>>                (Jones et al., 1990)
+ %   \citep*{key} ==>>               (Jones, Baker, and Smith, 1990)
+ %   \citep[chap. 2]{key} ==>>       (Jones et al., 1990, chap. 2)
+ %   \citep[e.g.][]{key} ==>>        (e.g. Jones et al., 1990)
+ %   \citep[e.g.][p. 32]{key} ==>>   (e.g. Jones et al., p. 32)
+ %   \citeauthor{key} ==>>           Jones et al.
+ %   \citeauthor*{key} ==>>          Jones, Baker, and Smith
+ %   \citeyear{key} ==>>             1990
+%---------------------------------------------
+
+
+\title{Supplementary information: For Climate drives the high survival synchrony among temperate songbird.}
+\subtitle{Among-species heterogeneity in sample size does not bias the estimation of synchrony.}
 \date{\today}
-\author{Timoth\'ee Bonnet}
+\author{Ghislain Manon, Bonnet Timoth\'ee, Godeau Ugoline,\\ Dehorter Olivier, Gimenez Olivier, Henry Pierre-Yves}
 
 \begin{document}
 
@@ -31,11 +48,11 @@
 \clearpage
 
 \section{Goal and rationale}
-The primary goal of this appendix is to test the idea that among-species heterogeneity in sample size might bias the estimation of synchrony among species. The verbal argument behind this concern is that the time-dynamic of the most common species might "spill over" the estimation of the time-dynamic common to all species. 
+The primary goal of this appendix is to test the idea that among-species heterogeneity in sample size might bias the estimation of synchrony among species. The verbal argument behind this concern is that the time-dynamic of the most common species might ``spill over" the estimation of the time-dynamic common to all species. 
 A suggested solution to this problem has been not to model synchrony explicitly, so that the model does not contain an across-species time-dynamic, but instead to estimate species-specific time dynamics independently, and reconstruct the synchrony a posteriori. Technically, this would be done by fitting a species-by-time random interaction without fitting the main random effect of time (but fitting the main random effect of species).
 
-However, theory suggest that mixed models are generally able to handle unbalanced data, and that the estimation of synchrony should not be biased by unequal sample sizes.
-Moreover, theory also suggests that the "solution" of not modeling synchrony explicitly and reconstructed it a posteriori from model prediction is flawed, and will generally lead to  under-estimation.
+However, theory suggest that mixed models are generally able to handle unbalanced data, and that the estimation of synchrony should not be biased by unequal sample sizes \citep{Pinheiro2000}.
+Moreover, theory also suggests that the "solution" of not modeling synchrony explicitly and reconstructed it a posteriori from model prediction is flawed, and will generally lead to  under-estimation \citep{Hadfield2010b, Houslay2017}.
 
 Here, we test that these two expectations hold for the special case of mixed mark-recapture models used in the main text, and that the results presented in the main text do not suffer from a bias due to unequal sample size among species.
 To this end, we first multi-species mark-recapture data with synchrony among species or with no synchrony among species. We use the same sample size per year and per species as in the real data, but halved, in order to speed up modeling.  
@@ -49,7 +66,7 @@ We need \texttt{R2jags} to communicate with \texttt{JAGS}.
 We use \texttt{reshape} to convert a matrix into a data frame.
 We use \texttt{lme4} for variance partitioning.
 We also load the real sample sizes per species per year.
-<<>>=
+<<message=FALSE>>=
 setwd(dir = "~/Documents/GitHub/penguinteam/SimulsForPubli/")
 library(R2jags)
 library(reshape)
@@ -60,7 +77,31 @@ SpNumbers <- SpNumbers[,-1]
 
 @
 
-\section{Strong synchrony}
+Graphic control:
+<<>>=
+szgr <- 2
+szax <- 1.3
+marr <- c(4, 4, 1, 1) + 0.1
+setPar<-function(){
+par(las=1,mar=marr, cex=szgr, cex.lab=szax , cex.axis=szax, lwd=2 ,pch=1, las=1)
+}
+@
+
+\begin{figure}[ht]
+
+  <<samplesize, dev='tikz', fig.width=8, fig.height=6>>=
+  setPar()  
+  propspecies <- rowMeans(SpNumbers)
+    
+    barplot(propspecies[order(propspecies)],
+            xlab="species", ylab="Sample size")
+  @
+  \caption{Distribution of the sample size per species.}
+\end{figure}
+
+\clearpage
+
+\section{Strong synchrony in the data}
 
 \subsection{Data simulation}
 
@@ -105,7 +146,8 @@ P <- matrix(p, ncol = n.occasions-1, nrow = sum(SpTots))
 simul.cjs <- function(PHI, P, SpTots){
   n.occasions <- dim(PHI)[2] + 1
   CH <- matrix(0, ncol = n.occasions, nrow = sum(SpTots))
-  mark.occ <- rep(1:length(SpTots), SpTots[1:length(SpTots)])  # Define a vector with the occasion of marking
+   # Define a vector with the occasion of marking
+  mark.occ <- rep(1:length(SpTots), SpTots[1:length(SpTots)]) 
   
   for (i in 1:sum(SpTots)){# Fill the CH matrix
     CH[i, mark.occ[i]] <- 1       # Write an 1 at the release occasion
@@ -283,7 +325,7 @@ print(cjs.interactionS, digits = 3)
 load(file = "ForCluster/cjs.interactionS_dataSynchro")
 @
 
-The synchrony is well recovered graphically:
+The synchrony is well recovered graphically (Figure \ref{predsync1})
 <<>>=
 # Summarize posteriors
 
@@ -293,14 +335,21 @@ predictions <- cjs.interactionS$BUGSoutput$mean$beta.tXsp +
   matrix(cjs.interactionS$BUGSoutput$mean$beta.sp,
          nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
 
+@
 
+\begin{figure}[ht]
+<<predsync1, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
 plot(predictions[,1], type="l", ylim=c(-3,3),
-     xlab="year", main="With year RE")
+     xlab="year", main="", ylab="Latent survival probability")
 for(i in 1:n.sp)
 {
   lines(predictions[,i])
 }
 @
+\caption{Predicted latent values for survival for all species and years. The model used for predictions explicitly modeled synchrony, and the data were simulated with a strong synchrony. Synchrony is well recovered by the model, as evidenced by the parallel time-dynamics among species.}
+\label{predsync1}
+\end{figure}
 
 The intra-Class correlation is close to one, as revealed by the point estimate:
 <<>>=
@@ -310,7 +359,7 @@ The intra-Class correlation is close to one, as revealed by the point estimate:
 
 @
 
-As well as the posterior distribution:
+As well as the posterior distribution (Figure \ref{SESSS}).
 <<>>=
 iccpost <- vector(length=1000)
 for (ch in 1:1)
@@ -330,14 +379,38 @@ sdprior2 <- sdprior
 
 iccprior <- (sdprior^2)/(sdprior^2+sdprior2^2)
 
-traceplot(as.mcmc(iccpost), ylim=c(0,1))
+@
+
+\begin{figure}[ht]
+<<SESSS, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
 plot(density(iccpost), xlim = c(0,1), lwd=5,
-     main="Synchrony estimate with strong synchrony simulated (1)",
+     main="",
      xlab="ICC", ylab="Probability density")
 
-lines(density(iccprior), lwd=3, lty=2, col="gray")
+lines(density(iccprior), lwd=5, lty=2, col="gray")
 
+legend(x = "topleft", legend=c("Posterior", "Prior"), lty=c(1,2), lwd=5,
+       col=c("black", "gray"))
 @
+\caption{Probability density distributions of the intra-class correlation (ICC) of time, measuring the proportion of time-variation in survival rate that is common to all bird species. Data were simulated with a strong synchrony (ICC close to one). Prior and posterior distributions are shown.}
+\label{SESSS}
+\end{figure}
+
+Note that the synchrony manifests itself on the latent scale, but also on the scale of the data (Figure \ref{preddata1}).
+\begin{figure}[ht]
+<<Preddata1, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
+plot(1/(1+exp(-predictions))[,1], type="l", ylim=c(0, 1), xlab="year",
+     ylab="predicted survival probability")
+for(i in 1:n.sp)
+{
+  lines(1/(1+exp(-predictions))[,i])
+}
+@
+\caption{Predicted survival probability by species and by year. Data were simulated with a strong synchrony (ICC close to one). The model used for prediction explicitly modeled synchrony.}
+\label{preddata1}
+\end{figure}
 
 \subsection{Interactive model without explicit synchrony}
 We analyse the same data, but this time using a model that does not explicitly contain synchrony.
@@ -444,7 +517,6 @@ print(cjs.interactionNot, digits = 3)
 load(file = "ForCluster/cjs.interactionSNot_dataSynchro")
 @
 
-Graphically, much less synchrony is apparent:
 <<>>=
 
 predictions <-  matrix(cjs.interactionNot$BUGSoutput$mean$phi.mean,
@@ -452,21 +524,49 @@ predictions <-  matrix(cjs.interactionNot$BUGSoutput$mean$phi.mean,
       cjs.interactionNot$BUGSoutput$mean$beta.tXsp +
   matrix(cjs.interactionNot$BUGSoutput$mean$beta.sp,
          nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
+@
+Graphically, much less synchrony is apparent (Figure \ref{predsync2})
 
-
-plot(predictions[,1], type="l", ylim=c(-3,3), xlab="year", main="With year RE")
+\begin{figure}[ht]
+<<predsync2, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
+plot(predictions[,1], type="l", ylim=c(-3,3), xlab="year", main="",
+     ylab="Latent survival probability")
 for(i in 1:n.sp)
 {
   lines(predictions[,i])
 }
 @
+\caption{Predicted latent values for survival for all species and years. The model used for predictions did not model explicit synchrony but allow for it with a species-by-time random interaction, and the data were simulated with a strong synchrony. Synchrony is poorly recovered by the model, as evidenced by the lack of parallel time-dynamics among species.}
+\label{predsync2}
+\end{figure}
+
+\begin{figure}[ht]
+<<Preddata2, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
+plot(1/(1+exp(-predictions))[,1], type="l", ylim=c(0, 1), xlab="year",
+     ylab="predicted survival probability")
+for(i in 1:n.sp)
+{
+  lines(1/(1+exp(-predictions))[,i])
+}
+@
+\caption{Predicted survival probability by species and by year. Data were simulated with a strong synchrony (ICC close to one). The model used for prediction explicitly did not model synchrony.}
+\label{preddata2}
+\end{figure}
 
 The intra class correlation (ratio of temporal variance common to all species over the total temporal variance) is weak and close to zero.
 <<>>=
 
-meltedpredictions <- melt(predictions)
-summary(aov(formula = value ~ X2 + X1, data=meltedpredictions))
-summary(lmer(value ~ 1 + (1|X1)+ (1|X2), data=meltedpredictions))
+meltedpredictions <- melt(predictions, varnames = c("year", "species"))
+
+modvardec <- lmer(value ~ 1 + (1|year)+ (1|species) , data=meltedpredictions) 
+summary(modvardec)
+
+sptimeV <- sigma(modvardec)^2
+timeV <- as.numeric(VarCorr(modvardec)$year)
+
+timeV/(timeV+sptimeV)
 @
 
 \section{No synchrony}
@@ -518,7 +618,7 @@ We fit the model with explicit synchrony.
 load(file = "ForCluster/cjs.interactionS_dataNoSynchro")
 @
 
-There graphically:
+There graphically, no synchrony is apparent (Figure \ref{predsync3}), which matches the data-generating process that did not have any synchrony.
 <<>>=
 # Summarize posteriors
 
@@ -527,16 +627,37 @@ predictions <- cjs.interactionSdataNoS$BUGSoutput$mean$beta.tXsp +
          nrow = n.occasions-1, ncol = n.sp, byrow = FALSE) +
   matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.sp, 
          nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
+@
 
-
-plot(predictions[,1], type="l", ylim=c(-3,3), xlab="year", main="With year RE")
+\begin{figure}[ht]
+<<predsync3, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
+plot(predictions[,1], type="l", ylim=c(-3,3),
+     xlab="year", main="", ylab="Latent survival probability")
 for(i in 1:n.sp)
 {
   lines(predictions[,i])
 }
 @
+\caption{Predicted latent values for survival for all species and years. The model used for predictions explicitly modeled synchrony, and the data were simulated without any synchrony. The model correctly identifies the lack of synchrony, as evidenced by the non-parallel time-dynamics among species.}
+\label{predsync3}
+\end{figure}
 
-Intra-Class correlation:
+\begin{figure}[ht]
+<<Preddata3, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
+plot(1/(1+exp(-predictions))[,1], type="l", ylim=c(0, 1), xlab="year",
+     ylab="predicted survival probability")
+for(i in 1:n.sp)
+{
+  lines(1/(1+exp(-predictions))[,i])
+}
+@
+\caption{Predicted survival probability by species and by year. Data were simulated without any synchrony (ICC close to zero). The model used for prediction explicitly modeled synchrony.}
+\label{preddata3}
+\end{figure}
+
+The intra-Class correlation is close to zero (Figure \ref{SESNS}) as expected.
 <<>>=
 (cjs.interactionSdataNoS$BUGSoutput$mean$sigma.t^2)/
   (cjs.interactionSdataNoS$BUGSoutput$mean$sigma.tXsp^2+
@@ -556,10 +677,31 @@ for (ch in 1:1)
           cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.tXsp"]^2)
   }
 }
-traceplot(as.mcmc(iccpost), ylim=c(0,1))
-plot(density(iccpost), xlim = c(0,1),
-     main="Synchrony estimate with no synchrony simulated")  
-
 
 @
+
+
+\begin{figure}[ht]
+<<SESNS, dev='tikz', fig.width=8, fig.height=6>>=
+setPar()
+plot(density(iccpost), xlim = c(0,1), lwd=5,
+     main="",
+     xlab="ICC", ylab="Probability density")
+
+lines(density(iccprior), lwd=5, lty=2, col="gray")
+
+legend(x = "topright", legend=c("Posterior", "Prior"), lty=c(1,2), lwd=5,
+       col=c("black", "gray"))
+@
+\caption{Probability density distributions of the intra-class correlation (ICC) of time, measuring the proportion of time-variation in survival rate that is common to all bird species. Data were simulated without any synchrony (ICC close to zero). Prior and posterior distributions are shown.}
+\label{SESNS}
+\end{figure}
+
+
+
+\clearpage
+
+\bibliographystyle{jeb}
+\bibliography{BiblioFluSelJEB}
+
 \end{document}
