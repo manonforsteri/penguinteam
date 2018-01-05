@@ -40,7 +40,6 @@
 \author{Ghislain Manon, Bonnet Timoth\'ee, Godeau Ugoline,\\ Dehorter Olivier, Gimenez Olivier, Henry Pierre-Yves}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
 
 \maketitle
 
