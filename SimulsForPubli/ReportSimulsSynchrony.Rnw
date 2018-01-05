@@ -40,6 +40,7 @@
 \author{Ghislain Manon, Bonnet Timoth\'ee, Godeau Ugoline,\\ Dehorter Olivier, Gimenez Olivier, Henry Pierre-Yves}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \maketitle
 
@@ -48,17 +49,17 @@
 \clearpage
 
 \section{Goal and rationale}
-The primary goal of this appendix is to test the idea that among-species heterogeneity in sample size might bias the estimation of synchrony among species. The verbal argument behind this concern is that the time-dynamic of the most common species might ``spill over" the estimation of the time-dynamic common to all species. 
+The primary goal of this appendix is to test the idea that among-species heterogeneity in sample size might bias the estimation of synchrony among species. The verbal argument behind this concern is that the time-dynamic of the most common species might ``spill over" the estimation of the time-dynamic common to all species.
 A suggested solution to this problem has been not to model synchrony explicitly, so that the model does not contain an across-species time-dynamic, but instead to estimate species-specific time dynamics independently, and reconstruct the synchrony a posteriori. Technically, this would be done by fitting a species-by-time random interaction without fitting the main random effect of time (but fitting the main random effect of species).
 
 However, theory suggest that mixed models are generally able to handle unbalanced data, and that the estimation of synchrony should not be biased by unequal sample sizes \citep{Pinheiro2000}.
 Moreover, theory also suggests that the "solution" of not modeling synchrony explicitly and reconstructed it a posteriori from model prediction is flawed, and will generally lead to  under-estimation \citep{Hadfield2010b, Houslay2017}.
 
 Here, we test that these two expectations hold for the special case of mixed mark-recapture models used in the main text, and that the results presented in the main text do not suffer from a bias due to unequal sample size among species.
-To this end, we first multi-species mark-recapture data with synchrony among species or with no synchrony among species. We use the same sample size per year and per species as in the real data, but halved, in order to speed up modeling.  
-We then analyse the simulated data either with a model that explicitly contain synchrony, or with a model that does not contain explicit synchrony but only allow for its reconstruction from species-specific estimates.
+To this end, we first simulate multi-species mark-recapture data with synchrony among species or with no synchrony among species. We use the same sample size per year and per species as in the real data, but halved, in order to speed up modeling.
+We then analyze the simulated data either with a model that explicitly contain synchrony, or with a model that does not contain explicit synchrony but only allow for its reconstruction from species-specific estimates.
 
-We first show that when sychrony is present in simulated data, a model explicitly modeling synchrony can recover it. We then show that on the same data, a model that does not explicitly model synchrony, but instead makes it estimation possible a posteriori, fails to estimate synchrony.
+We first show that when synchrony is present in simulated data, a model explicitly modeling synchrony can recover it. We then show that on the same data, a model that does not explicitly model synchrony, but instead makes it estimation possible a posteriori, fails to estimate synchrony.
 Finally, we show that the first model (explicitly modeling synchrony) does not detect synchrony if none is simulated in the data.
 
 \section{Load packages and data}
@@ -67,7 +68,7 @@ We use \texttt{reshape} to convert a matrix into a data frame.
 We use \texttt{lme4} for variance partitioning.
 We also load the real sample sizes per species per year.
 <<message=FALSE>>=
-setwd(dir = "~/Documents/GitHub/penguinteam/SimulsForPubli/")
+setwd(dir = "~/Documents/CanberraPostDoc/BirdSnynchro/penguinteam/SimulsForPubli/")
 library(R2jags)
 library(reshape)
 library(lme4)
@@ -90,9 +91,9 @@ par(las=1,mar=marr, cex=szgr, cex.lab=szax , cex.axis=szax, lwd=2 ,pch=1, las=1)
 \begin{figure}[ht]
 
   <<samplesize, dev='tikz', fig.width=8, fig.height=6>>=
-  setPar()  
+  setPar()
   propspecies <- rowMeans(SpNumbers)
-    
+
     barplot(propspecies[order(propspecies)],
             xlab="species", ylab="Sample size")
   @
@@ -105,7 +106,7 @@ par(las=1,mar=marr, cex=szgr, cex.lab=szax , cex.axis=szax, lwd=2 ,pch=1, las=1)
 
 \subsection{Data simulation}
 
-We use an additive model to simulate data, so that the effect of time is the same for all species, leading to strong (virtually perfect) synchrony. 
+We use an additive model to simulate data, so that the effect of time is the same for all species, leading to strong (virtually perfect) synchrony.
 
 <<>>=
 n.occasions <- ncol(SpNumbers)  # Number of capture occasions
@@ -126,7 +127,7 @@ CumulTots <- c(0, cumsum(SpTots))
 sp_ind <- vector(length = sum(SpTots))
 for (sp in 1:n.sp)
 {
-  spe <-  effect_Sp[sp] 
+  spe <-  effect_Sp[sp]
   sp_ind[(CumulTots[sp]+1):CumulTots[sp+1]] <- sp
   #nind <- sum(SpNumbers[sp,])
   for (occ in 1:(n.occasions-1))
@@ -134,7 +135,7 @@ for (sp in 1:n.sp)
     oce <- effect_Occasions[occ]
     PHI[(CumulTots[sp]+1):CumulTots[sp+1],occ] <- 1/(1+exp(-( meanphi + oce + spe) ) )
   }
-  
+
 }
 
 P <- matrix(p, ncol = n.occasions-1, nrow = sum(SpTots))
@@ -147,17 +148,17 @@ simul.cjs <- function(PHI, P, SpTots){
   n.occasions <- dim(PHI)[2] + 1
   CH <- matrix(0, ncol = n.occasions, nrow = sum(SpTots))
    # Define a vector with the occasion of marking
-  mark.occ <- rep(1:length(SpTots), SpTots[1:length(SpTots)]) 
-  
+  mark.occ <- rep(1:length(SpTots), SpTots[1:length(SpTots)])
+
   for (i in 1:sum(SpTots)){# Fill the CH matrix
     CH[i, mark.occ[i]] <- 1       # Write an 1 at the release occasion
     if (mark.occ[i]==n.occasions) next
     for (t in (mark.occ[i]+1):n.occasions){
       # Bernoulli trial: does individual survive occasion?
       sur <- rbinom(1, 1, PHI[i,t-1])
-      if (sur==0) break  	# If dead, move to next individual 
-      
-      rp <- rbinom(1, 1, P[i,t-1])# Bernoulli trial: is individual recaptured? 
+      if (sur==0) break  	# If dead, move to next individual
+
+      rp <- rbinom(1, 1, P[i,t-1])# Bernoulli trial: is individual recaptured?
       if (rp==1) CH[i,t] <- 1
     } #t
   } #i
@@ -223,18 +224,18 @@ cat("
     logit(p[i,t]) <- mu.p
     } #t
     } #i
-    
+
     meanphi ~ dunif(0, 1)              # Priors for group-specific survival
-    
+
     mu.phi<- log(phi.mean/(1-phi.mean))
     phi.mean ~ dunif(0,1)
-    
+
     for (t in 1:(n.occasions-1)){
     beta.t[t] ~ dnorm(0,tau.t)
     }
     tau.t <- pow(sigma.t, -2)
     sigma.t ~ dunif(0,10)
-    
+
     for (sp in 1:n.sp){
     beta.sp[sp] ~ dnorm(0,tau.sp)
     for (t in 1:(n.occasions-1)){
@@ -248,8 +249,8 @@ cat("
 
     mu.p <- log(p.mean/(1-p.mean))
     p.mean ~ dunif(0,1)
-    
-    # Likelihood 
+
+    # Likelihood
     for (i in 1:nind){
     # Define latent state at first capture
     z[i,f[i]] <- 1
@@ -274,8 +275,8 @@ sink()
 
 # Bundle data
 jags.data <- list(y = CH, f = f, nind = dim(CH)[1],
-                  n.occasions = dim(CH)[2], 
-                  z = known.state.cjs(CH), 
+                  n.occasions = dim(CH)[2],
+                  z = known.state.cjs(CH),
                   sp_ind=sp_ind, n.sp=n.sp)
 
 #### Initial values####
@@ -297,7 +298,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                 phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
                 beta.t=c(rnorm(n = n.occasions-1,mean = 0,sd=1 ) ),
                 beta.sp=c(rnorm(n = n.sp,mean = 0,sd=1 ) ),
-                beta.tXsp= beta.tXsp_ini() )}  
+                beta.tXsp= beta.tXsp_ini() )}
 
 # Parameters monitored
 parameters <- c("phi.mean", "p.mean",
@@ -366,9 +367,9 @@ for (ch in 1:1)
 {
   for (itt in 1:1000)
   {
-    iccpost[itt + 1000*(ch-1)] <- 
+    iccpost[itt + 1000*(ch-1)] <-
       cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 /
-      ( cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 + 
+      ( cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 +
           cjs.interactionS$BUGSoutput$sims.array[itt, ch,"sigma.tXsp"]^2)
   }
 }
@@ -412,8 +413,10 @@ for(i in 1:n.sp)
 \label{preddata1}
 \end{figure}
 
+\clearpage
+
 \subsection{Interactive model without explicit synchrony}
-We analyse the same data, but this time using a model that does not explicitly contain synchrony.
+We analyze the same data, but this time using a model that does not explicitly contain synchrony.
 
 <<eval=FALSE>>=
 
@@ -427,9 +430,9 @@ cat("
     logit(p[i,t]) <- mu.p
     } #t
     } #i
-    
+
     meanphi ~ dunif(0, 1)              # Priors for group-specific survival
-    
+
     mu.phi<- log(phi.mean/(1-phi.mean))
     phi.mean ~ dunif(0,1)
 
@@ -443,11 +446,11 @@ cat("
     sigma.sp ~ dunif(0,10)
     tau.tXsp <- pow(sigma.tXsp, -2)
     sigma.tXsp ~ dunif(0,10)
-    
+
     mu.p <- log(p.mean/(1-p.mean))
     p.mean ~ dunif(0,1)
-    
-    # Likelihood 
+
+    # Likelihood
     for (i in 1:nind){
     # Define latent state at first capture
     z[i,f[i]] <- 1
@@ -468,9 +471,9 @@ sink()
 
 <<eval=FALSE>>=
 # Bundle data
-jags.data <- list(y = CH, f = f, nind = dim(CH)[1], 
+jags.data <- list(y = CH, f = f, nind = dim(CH)[1],
                   n.occasions = dim(CH)[2],
-                  z = known.state.cjs(CH), 
+                  z = known.state.cjs(CH),
                   sp_ind=sp_ind, n.sp=n.sp)
 
 #### Initial values####
@@ -491,7 +494,7 @@ return(beta.tXsp)
 inits <- function(){list(z = cjs.init.z(CH, f),
                   phi.mean = runif(1, 0, 1), p.mean = runif(1, 0, 1),
                   beta.sp=c(rnorm(n = n.sp,mean = 0,sd=1 ) ),
-                  beta.tXsp= beta.tXsp_ini() )}  
+                  beta.tXsp= beta.tXsp_ini() )}
 
 # Parameters monitored
 parameters <- c("phi.mean", "p.mean",
@@ -560,7 +563,7 @@ The intra class correlation (ratio of temporal variance common to all species ov
 
 meltedpredictions <- melt(predictions, varnames = c("year", "species"))
 
-modvardec <- lmer(value ~ 1 + (1|year)+ (1|species) , data=meltedpredictions) 
+modvardec <- lmer(value ~ 1 + (1|year)+ (1|species) , data=meltedpredictions)
 summary(modvardec)
 
 sptimeV <- sigma(modvardec)^2
@@ -569,12 +572,14 @@ timeV <- as.numeric(VarCorr(modvardec)$year)
 timeV/(timeV+sptimeV)
 @
 
-\section{No synchrony}
-We now simulate data without any synchrony.
+\clearpage
+
+\section{No synchrony in the data}
+We now simulate data without any synchrony to check whether a model would detect spurious synchrony because of the over-abundance of some species.
 <<>>=
 effect_OccasionsSP<-matrix(c(rnorm(n = (n.occasions-1)*n.sp,
                                    mean = 0,sd = 0.5)),
-                           nrow=n.sp, 
+                           nrow=n.sp,
                            ncol=(n.occasions-1))#time effect
 
 effect_Sp<-c(0,rnorm(n = n.sp-1,mean=0,sd=1))
@@ -587,13 +592,13 @@ CumulTots <- c(0, cumsum(SpTots))
 sp_ind <- vector(length = sum(SpTots))
 for (sp in 1:n.sp)
 {
-  spe <-  effect_Sp[sp] 
+  spe <-  effect_Sp[sp]
   sp_ind[(CumulTots[sp]+1):CumulTots[sp+1]] <- sp
   #nind <- sum(SpNumbers[sp,])
   for (occ in 1:(n.occasions-1))
   {
     oce <- effect_Occasions[occ]
-    PHI[(CumulTots[sp]+1):CumulTots[sp+1],occ] <- 
+    PHI[(CumulTots[sp]+1):CumulTots[sp+1],occ] <-
       1/(1+exp(-( meanphi + effect_OccasionsSP[sp,occ] + spe) ) )
   }
 }
@@ -623,9 +628,9 @@ There graphically, no synchrony is apparent (Figure \ref{predsync3}), which matc
 # Summarize posteriors
 
 predictions <- cjs.interactionSdataNoS$BUGSoutput$mean$beta.tXsp +
-  matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.t, 
+  matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.t,
          nrow = n.occasions-1, ncol = n.sp, byrow = FALSE) +
-  matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.sp, 
+  matrix(cjs.interactionSdataNoS$BUGSoutput$mean$beta.sp,
          nrow = n.occasions-1, ncol=n.sp, byrow = TRUE)
 @
 
@@ -671,9 +676,9 @@ for (ch in 1:1)
 {
   for (itt in 1:1000)
   {
-    iccpost[itt + 1000*(ch-1)] <- 
+    iccpost[itt + 1000*(ch-1)] <-
       cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 /
-      ( cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 + 
+      ( cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.t"]^2 +
           cjs.interactionSdataNoS$BUGSoutput$sims.array[itt, ch,"sigma.tXsp"]^2)
   }
 }
@@ -696,7 +701,6 @@ legend(x = "topright", legend=c("Posterior", "Prior"), lty=c(1,2), lwd=5,
 \caption{Probability density distributions of the intra-class correlation (ICC) of time, measuring the proportion of time-variation in survival rate that is common to all bird species. Data were simulated without any synchrony (ICC close to zero). Prior and posterior distributions are shown.}
 \label{SESNS}
 \end{figure}
-
 
 
 \clearpage
